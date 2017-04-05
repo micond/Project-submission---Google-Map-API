@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link type="text/css" rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/themes/smoothness/jquery-ui.css" />
+    <link type="text/css" rel="stylesheet" href="css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="css/style.css" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Sightseeing Places</title>
+
+</head>
+
+<body>
+
+    <div class="container-fluid">
+        <h3>Sightseeing Places in Bratislava</h3>
+        <form>
+            <input placeholder="Filter Places" id="filterInput" type="search" name="q" data-bind="value: query, valueUpdate: 'keyup'" autocomplete="off"class="form-control"/>
+        </form>
+                <ul class="container-fluid text-primary sightseeing_list" data-bind="foreach: SourceList">
+                    <li data-bind="click: $root.highlighPlace">
+                        <span class="liststyle"
+                        data-bind="text: name"></span> : Lat: <span class="text-danger" data-bind="text: lat"></span> & Long: <span class="text-danger" data-bind="text: long"></span>
+                    </li>
+
+                </ul>
+                </div>
+        <div class="container-fluid" id="map" class="col-md-6"></div>
+
+    <script src="js/lib/knockout-3.2.0.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?libraries=places,geometry,drawing&key=AIzaSyDkUiB6IFN_x5suEFIYy1flASQiYmr_rDk&v=3&"></script>
+    <script src="js/map_styles.js"></script>
+    <script src="js/lib/jquery.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+
+
+
+</body>
+
+</html>

@@ -1,0 +1,31 @@
+html, body, {
+    height: 100%;
+}
+
+h3 {
+  color: #337ab7;
+}
+
+#map {
+    height: 500px;
+}
+
+.sightseeing_list {
+    font-size: 1.2em;
+    font-style: italic;
+}
+
+.sightseeing_list li:hover {
+  cursor: pointer;
+  background-color: lightblue;
+  font-weight: bold;
+}
+
+.container-fluid {
+  max-width: 800px;
+}
+
+.liststyle {
+font-style: normal;
+font-weight: bold;
+}

@@ -1,7 +1,5 @@
-// var map, infowindow, bounds;
-// var markersArray = [];
+// global variables
 var markers = [];
-// var infoWindowElement = null;
 var SourceArray = [{
         name: "Most SNP",
         lat: 48.138919,
@@ -52,7 +50,7 @@ function initMap() {
     });
     setMarkers(map, SourceArray);
 };
-
+// Set markers to map
 function setMarkers(map, location) {
     for (i = 0; i < location.length; i++) {
 
@@ -81,8 +79,8 @@ function setMarkers(map, location) {
     }
 };
 
+//Creates inforWindow for selected marker
 function info(marker, location) {
-
     var wikiurl = "https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro=&explaintext=&exchars=500&titles=" + location.name;
     var htmlWiki = "<div id='content'><h3>" + location.name + "</h3>";
     htmlWiki += '<img class="photoimg" alt="Google Street View picture is currently not available" src="https://maps.googleapis.com/maps/api/streetview?size=150x150&location=' + location.lat + ',' + location.long + '&heading=' + location.heading + '&pitch=' + location.pitch + '"><span>';
@@ -97,11 +95,10 @@ function info(marker, location) {
             };
 
             var content = htmlWiki
-
             var infowindow = new google.maps.InfoWindow({
                 maxWidth: 300
             });
-
+            // marker click event
             google.maps.event.addListener(marker, 'click', (function(marker, content, infowindow) {
                 return function() {
                     infowindow.setContent(content);
@@ -156,17 +153,12 @@ var viewModel = function() {
                     setTimeout(function() {
                         tempMarker.setAnimation(null);
                     }, 1400);
-
                 }
-
             } else {
                 markers[i].setMap(null);
             }
-
         }
     };
-
 };
-
 // knockout binding
 ko.applyBindings(new viewModel());

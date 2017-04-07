@@ -1,209 +1,172 @@
-var Sightseeing = (function() {
+// var map, infowindow, bounds;
+// var markersArray = [];
+var markers = [];
+// var infoWindowElement = null;
+var SourceArray = [{
+        name: "Most SNP",
+        lat: 48.138919,
+        long: 17.104624,
+        heading: 180,
+        pitch: 10
+    }, {
+        name: "Blue Church",
+        lat: 48.143621,
+        long: 17.116953,
+        heading: 190,
+        pitch: 20
+    }, {
+        name: "Bratislava Castle",
+        lat: 48.141679,
+        long: 17.099819,
+        heading: 90,
+        pitch: 20
+    }, {
+        name: "Grassalkovich Palace",
+        lat: 48.149203,
+        long: 17.107712,
+        heading: 135,
+        pitch: 10
+    }, {
+        name: "Sad Janka Kráľa",
+        lat: 48.135043,
+        long: 17.109239,
+        heading: 40,
+        pitch: 20
+    },
+    {
+        name: "Kamzík TV Tower",
+        lat: 48.182441,
+        long: 17.095325,
+        heading: 280,
+        pitch: 40
+    }
+];
 
-    var model = {
-        map: null,
+// initialization of google maps api
+function initMap() {
+    map = new google.maps.Map(document.getElementById("map"), {
+        center: new google.maps.LatLng(48.143506, 17.105588),
+        zoom: 14,
+        mapTypeId: google.maps.MapTypeId.roadmap,
+        styles: map_styles
+    });
+    setMarkers(map, SourceArray);
+};
 
-        // initialization of google maps api
-        init: function() {
-            map = new google.maps.Map(document.getElementById("map"), {
-                center: new google.maps.LatLng(48.143506, 17.105588),
-                zoom: 14,
-                mapTypeId: google.maps.MapTypeId.roadmap,
-                styles: map_styles
-            });
+function setMarkers(map, location) {
+    for (i = 0; i < location.length; i++) {
 
+        latlngset = new google.maps.LatLng(location[i].lat, location[i].long);
 
-        },
+        var marker = new google.maps.Marker({
+            map: map,
+            title: location[i].name,
+            position: latlngset
+        });
 
-        // rendering functionality
-        point: function(name, lat, long, heading, pitch) {
-            this.name = name;
-            this.lat = ko.observable(lat);
-            this.long = ko.observable(long);
-
-            var marker = new google.maps.Marker({
-                position: new google.maps.LatLng(lat, long),
-                title: name,
-                map: map
-            });
-
-            markersArray.push(marker);
-
-            // Extend the boundaries of the map for each marker and display the marker
-            var bounds = new google.maps.LatLngBounds();
-            for (var i = 0; i < markersArray.length; i++) {
-                bounds.extend(markersArray[i].getPosition());
-            };
+        markers.push(marker);
+        // markers always fit on screen as user resizes their browser window
+        map.setCenter(marker.getPosition());
+        google.maps.event.addDomListener(window, 'resize', function() {
             map.fitBounds(bounds);
+        });
 
-            // marker click event with wiki API
-            google.maps.event.addListener(marker, 'click', function() {
-
-                var WikiUrl = "https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro=&explaintext=&exchars=500&titles=" + name;
-                var htmlWiki = "<div id='content'><h3>" + name + "</h3>";
-                htmlWiki += '<img class="photoimg" alt="Google Street View picture is currently not available" src="https://maps.googleapis.com/maps/api/streetview?size=150x150&location=' + lat + ',' + long + '&heading=' + heading + '&pitch=' + pitch + '"><span>';
-
-                // error handling for wikipedia request
-                var wikiRequestTimeout = setTimeout(function() {
-                    htmlWiki += "Request of wikipedia resouces failed.</span></p></div>";
-                    var infowindow = new google.maps.InfoWindow({
-                        content: htmlWiki,
-                        maxWidth: 300
-                    });
-                    infowindow.open(map, marker);
-                }, 3000);
-
-                // jsonp ajax request to get Wikipedia data
-                $.ajax({
-                    url: WikiUrl,
-                    dataType: "jsonp",
-                    success: function(response) {
-                        var obj = response.query.pages;
-                        for (var prop in obj) {
-                            htmlWiki += obj[prop].extract + "</span><p>Source: <a href='https://en.wikipedia.org/w/index.php?title=" + name + "'>wikipedia</a></p></div>";
-                        }
-
-                        // removing animation from non-selected items
-                        for (var i = 0; i < markersArray.length; i++) {
-                            markersArray[i].setAnimation(null);
-                        }
-
-                        // removing infowindow from non-active item
-                        if (!$.isEmptyObject(infoWindowElement)) {
-                            infoWindowElement.close();
-                        }
-
-                        // infowindow functionality
-                        var infowindow = new google.maps.InfoWindow({
-                            content: htmlWiki,
-                            maxWidth: 300
-                        });
-                        infowindow.open(map, marker);
-                        infoWindowElement = infowindow;
-
-                        // bounce effect lasting 3 seconds
-                        var tempMarker = marker;
-                        tempMarker.setAnimation(google.maps.Animation.BOUNCE);
-                        setTimeout(function() {
-                            tempMarker.setAnimation(null);
-                        }, 3000);
-
-                        // wikipedia error handling
-                        clearTimeout(wikiRequestTimeout);
-                    }
-                });
-            });
+        var bounds = new google.maps.LatLngBounds();
+        for (var i = 0; i < markers.length; i++) {
+            bounds.extend(markers[i].getPosition());
         }
+        map.fitBounds(bounds);
 
+        info(marker, location[i])
+    }
+};
 
-    };
+function info(marker, location) {
 
-    var viewModel = function() {
+    var wikiurl = "https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro=&explaintext=&exchars=500&titles=" + location.name;
+    var htmlWiki = "<div id='content'><h3>" + location.name + "</h3>";
+    htmlWiki += '<img class="photoimg" alt="Google Street View picture is currently not available" src="https://maps.googleapis.com/maps/api/streetview?size=150x150&location=' + location.lat + ',' + location.long + '&heading=' + location.heading + '&pitch=' + location.pitch + '"><span>';
+    // jsonp ajax request to get Wikipedia extract
+    $.ajax({
+        url: wikiurl,
+        dataType: "jsonp",
+        success: function(response) {
+            var obj = response.query.pages;
+            for (var prop in obj) {
+                htmlWiki += obj[prop].extract + "</span><p>Source: <a href='https://en.wikipedia.org/w/index.php?title=" + name + "'>wikipedia</a></p></div>";
+            };
 
-        // source array of map point elements
-        this.SourceArray = [{
-                name: "Most SNP",
-                lat: 48.138919,
-                long: 17.104624,
-                heading: 180,
-                pitch: 10
-            }, {
-                name: "Blue Church",
-                lat: 48.143621,
-                long: 17.116953,
-                heading: 190,
-                pitch: 21.9
-            }, {
-                name: "Bratislava Castle",
-                lat: 48.141679,
-                long: 17.099819,
-                heading: 90,
-                pitch: 20
-            }, {
-                name: "Grassalkovich Palace",
-                lat: 48.149203,
-                long: 17.107712,
-                heading: 135,
-                pitch: 10
-            }, {
-                name: "Sad Janka Kráľa",
-                lat: 48.135043,
-                long: 17.109239,
-                heading: 40,
-                pitch: 20
-            },
-            {
-                name: "Kamzík TV Tower",
-                lat: 48.182441,
-                long: 17.095325,
-                heading: 280,
-                pitch: 40
-            }
-        ];
+            var content = htmlWiki
 
-
-
-        // search variable
-        this.query = ko.observable('');
-
-        // filter functionality for Query
-        this.SourceList = ko.dependentObservable(function() {
-            search = this.query().toLowerCase();
-
-            // clearing all markers in Array
-            for (var i in markersArray) {
-                markersArray[i].setMap(null);
-            }
-            markersArray = [];
-
-            // filtering query
-            var results = ko.utils.arrayFilter(this.SourceArray, function(point) {
-                return point.name.toLowerCase().indexOf(search) >= 0;
+            var infowindow = new google.maps.InfoWindow({
+                maxWidth: 300
             });
 
-            // Looping through result set and setting markers
-            results.forEach(function(Filteritem) {
-                new model.point(Filteritem.name, Filteritem.lat, Filteritem.long, Filteritem.heading, Filteritem.pitch);
-            });
+            google.maps.event.addListener(marker, 'click', (function(marker, content, infowindow) {
+                return function() {
+                    infowindow.setContent(content);
+                    infowindow.open(map, marker);
+                };
+            })(marker, content, infowindow));
+        }
+    }).done(function(data) {
+        // successful
+    }).fail(function(jqXHR, textStatus) {
+        // error handling
+        window.alert('Error Can not load Wiki');
+    });
+};
 
-            return results;
-        }, this);
+var viewModel = function() {
+    // search variable
+    this.query = ko.observable('');
 
-        // triggered by click event of left list section
-        this.highlighPlace = function(Filteritem) {
-            // animating markers
-            for (var i = 0; i < markersArray.length; i++) {
+    // filter functionality for Query
+    this.SourceList = ko.computed(function() {
+        search = this.query().toLowerCase();
 
-                // removing animation from non-selected items
-                markersArray[i].setAnimation(null);
-                if (markersArray[i].title == Filteritem.name) {
+        // filtering query
+        var results = ko.utils.arrayFilter(SourceArray, function(point) {
+            return point.name.toLowerCase().indexOf(search) >= 0;
+        });
+
+        return results;
+    }, this);
+
+    // triggered by click event of left list section
+    this.highlighPlace = function(Filteritem) {
+
+        // Aadding animation to selected marker + removing animation from non-selected items
+        for (var i = 0; i < markers.length; i++) {
+
+            if (markers[i].title == Filteritem.name) {
+                markers[i].setMap(map);
+                markers[i].setAnimation(null);
+                if (markers[i].title == Filteritem.name) {
+
+                    google.maps.event.trigger(markers[i], 'click');
 
                     // centering the clicked location
                     var panLocation = new google.maps.LatLng(Filteritem.lat, Filteritem.long);
                     map.panTo(panLocation);
 
-
                     // bounce effect for 4 seconds
-                    var tempMarker = markersArray[i];
+                    var tempMarker = markers[i];
                     tempMarker.setAnimation(google.maps.Animation.BOUNCE);
                     setTimeout(function() {
                         tempMarker.setAnimation(null);
-                    });
-                }
-            }
-        };
+                    }, 1400);
 
+                }
+
+            } else {
+                markers[i].setMap(null);
+            }
+
+        }
     };
 
-    // Initialization
-    model.init();
-    // as per google: markersArray set to global variable for clearing purposes
-    // https://developers.google.com/maps/documentation/javascript/examples/marker-remove
-    var markersArray = [];
-    var markers = [];
-    // last open InfoWindow element
-    var infoWindowElement = null;
-    // knockout binding
-    ko.applyBindings(new viewModel());
+};
 
-})();
+// knockout binding
+ko.applyBindings(new viewModel());

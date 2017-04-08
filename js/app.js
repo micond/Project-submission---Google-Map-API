@@ -1,6 +1,7 @@
 // global variables
+var map;
 var markers = [];
-var SourceArray = [{
+var locationsArray = [{
         name: "Most SNP",
         lat: 48.138919,
         long: 17.104624,
@@ -48,36 +49,41 @@ function initMap() {
         mapTypeId: google.maps.MapTypeId.roadmap,
         styles: map_styles
     });
-    setMarkers(map, SourceArray);
+    setMarkers(map, locationsArray);
+}
+
+mapError = () => {
+    // Error handling
+    window.alert('Error Can not load Google map');
 };
 // Set markers to map
 function setMarkers(map, location) {
-    for (i = 0; i < location.length; i++) {
+    for (var i = 0, len = location.length; i < len; i++) {
 
         latlngset = new google.maps.LatLng(location[i].lat, location[i].long);
 
         var marker = new google.maps.Marker({
             map: map,
             title: location[i].name,
-            position: latlngset
+            position: latlngset,
+            animation: google.maps.Animation.DROP
         });
 
         markers.push(marker);
-        // markers always fit on screen as user resizes their browser window
-        map.setCenter(marker.getPosition());
+
+        var bounds = new google.maps.LatLngBounds();
+        for (var j = 0; j < markers.length; j++) {
+            bounds.extend(markers[j].getPosition());
+        }
+        map.fitBounds(bounds);
+
         google.maps.event.addDomListener(window, 'resize', function() {
             map.fitBounds(bounds);
         });
 
-        var bounds = new google.maps.LatLngBounds();
-        for (var i = 0; i < markers.length; i++) {
-            bounds.extend(markers[i].getPosition());
-        }
-        map.fitBounds(bounds);
-
-        info(marker, location[i])
+        info(marker, location[i]);
     }
-};
+}
 
 //Creates inforWindow for selected marker
 function info(marker, location) {
@@ -92,9 +98,8 @@ function info(marker, location) {
             var obj = response.query.pages;
             for (var prop in obj) {
                 htmlWiki += obj[prop].extract + "</span><p>Source: <a href='https://en.wikipedia.org/w/index.php?title=" + name + "'>wikipedia</a></p></div>";
-            };
-
-            var content = htmlWiki
+            }
+            var content = htmlWiki;
             var infowindow = new google.maps.InfoWindow({
                 maxWidth: 300
             });
@@ -103,16 +108,29 @@ function info(marker, location) {
                 return function() {
                     infowindow.setContent(content);
                     infowindow.open(map, marker);
+
                 };
             })(marker, content, infowindow));
         }
-    }).done(function(data) {
-        // successful
     }).fail(function(jqXHR, textStatus) {
         // error handling
         window.alert('Error Can not load Wiki');
     });
-};
+
+    // marker click event
+    marker.addListener('click', toggleBounce);
+
+    function toggleBounce() {
+        if (marker.getAnimation() !== null) {
+            marker.setAnimation(null);
+        } else {
+            marker.setAnimation(google.maps.Animation.BOUNCE);
+            setTimeout(function() {
+                marker.setAnimation(null);
+            }, 2000);
+        }
+    }
+}
 
 var viewModel = function() {
     // search variable
@@ -123,39 +141,41 @@ var viewModel = function() {
         search = this.query().toLowerCase();
 
         // filtering query
-        var results = ko.utils.arrayFilter(SourceArray, function(point) {
-            return point.name.toLowerCase().indexOf(search) >= 0;
+        var results = ko.utils.arrayFilter(locationsArray, function(point) {
+            var isMatching = point.name.toLowerCase().indexOf(search) >= 0;
+            var pos = point.name;
+            if (isMatching) {
+                // show markers here
+                for (var i = 0, len = markers.length; i < len; i++) {
+                    if (markers[i].title == pos) {
+                        markers[i].setVisible(true);
+                    }
+                }
+            } else {
+                // Hide markers here
+                for (var k = 0, foo = markers.length; k < foo; k++) {
+                    if (markers[k].title == pos) {
+                        markers[k].setVisible(false);
+                    }
+                }
+            }
+            return isMatching;
         });
-
         return results;
     }, this);
 
     // triggered by click event of left list section
     this.highlighPlace = function(Filteritem) {
-
-        // Aadding animation to selected marker + removing animation from non-selected items
+        // Aadding animation to selected marker
         for (var i = 0; i < markers.length; i++) {
-
             if (markers[i].title == Filteritem.name) {
-                markers[i].setMap(map);
-                markers[i].setAnimation(null);
                 if (markers[i].title == Filteritem.name) {
-
                     google.maps.event.trigger(markers[i], 'click');
-
                     // centering the clicked location
                     var panLocation = new google.maps.LatLng(Filteritem.lat, Filteritem.long);
                     map.panTo(panLocation);
 
-                    // bounce effect for 4 seconds
-                    var tempMarker = markers[i];
-                    tempMarker.setAnimation(google.maps.Animation.BOUNCE);
-                    setTimeout(function() {
-                        tempMarker.setAnimation(null);
-                    }, 1400);
                 }
-            } else {
-                markers[i].setMap(null);
             }
         }
     };
